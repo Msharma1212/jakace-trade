@@ -40,7 +40,7 @@ const SignUpPage = () => {
         <div className="w-full lg:w-1/2 p-4 sm:p-8 flex flex-col">
           {/* LOGO */}
           <div className="mb-4 flex items-center justify-start gap-2">
-           <img src="/logo.png" alt="logo" className="w-9 h-9 object-contain" />
+           <img src="/logo.png" alt="logo" className="w-16 h-16 object-contain" />
             <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
               JakAce Trade
             </span>
