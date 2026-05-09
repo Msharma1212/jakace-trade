@@ -14,7 +14,7 @@ const Sidebar = () => {
           <img 
   src="/logo.png" 
   alt="logo" 
-  className="w-16 h-16 object-contain" 
+  className="w-32 h-32 object-contain" 
 />
           <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
             JakAce Trade
