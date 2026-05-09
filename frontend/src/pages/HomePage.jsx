@@ -6,7 +6,7 @@ import {
   getUserFriends,
   sendFriendRequest,
 } from "../lib/api";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { CheckCircleIcon, MapPinIcon, UserPlusIcon, UsersIcon } from "lucide-react";
 
 import { capitialize } from "../lib/utils";
@@ -16,41 +16,61 @@ import NoFriendsFound from "../components/NoFriendsFound";
 
 const HomePage = () => {
   const queryClient = useQueryClient();
+  const location = useLocation();
+
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
 
+  // ✅ Friends
   const { data: friends = [], isLoading: loadingFriends } = useQuery({
     queryKey: ["friends"],
     queryFn: getUserFriends,
   });
 
+  // ✅ Recommended Users
   const { data: recommendedUsers = [], isLoading: loadingUsers } = useQuery({
     queryKey: ["users"],
     queryFn: getRecommendedUsers,
   });
 
-  const { data: outgoingFriendReqs } = useQuery({
+  // ✅ Outgoing Requests (FIXED)
+  const { data: outgoingFriendReqs = [] } = useQuery({
     queryKey: ["outgoingFriendReqs"],
     queryFn: getOutgoingFriendReqs,
   });
 
+  // ✅ Send Request
   const { mutate: sendRequestMutation, isPending } = useMutation({
     mutationFn: sendFriendRequest,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] });
+    },
   });
 
+  // ✅ Fix outgoing IDs
   useEffect(() => {
     const outgoingIds = new Set();
-    if (outgoingFriendReqs && outgoingFriendReqs.length > 0) {
-      outgoingFriendReqs.forEach((req) => {
+
+    outgoingFriendReqs.forEach((req) => {
+      if (req?.recipient?._id) {
         outgoingIds.add(req.recipient._id);
-      });
-      setOutgoingRequestsIds(outgoingIds);
-    }
+      }
+    });
+
+    setOutgoingRequestsIds(outgoingIds);
   }, [outgoingFriendReqs]);
+
+  // ✅ FIX: auto refetch on back
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["friends"] });
+    queryClient.invalidateQueries({ queryKey: ["users"] });
+    queryClient.invalidateQueries({ queryKey: ["outgoingFriendReqs"] });
+  }, [location.pathname]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="container mx-auto space-y-10">
+
+        {/* HEADER */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Your Friends</h2>
           <Link to="/notifications" className="btn btn-outline btn-sm">
@@ -59,6 +79,7 @@ const HomePage = () => {
           </Link>
         </div>
 
+        {/* FRIENDS */}
         {loadingFriends ? (
           <div className="flex justify-center py-12">
             <span className="loading loading-spinner loading-lg" />
@@ -73,16 +94,15 @@ const HomePage = () => {
           </div>
         )}
 
+        {/* RECOMMENDED USERS */}
         <section>
           <div className="mb-6 sm:mb-8">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Meet New Learners</h2>
-                <p className="opacity-70">
-                  A place where people connect, learn new skills, and grow together — jakace trade
-                </p>
-              </div>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              Meet New Learners
+            </h2>
+            <p className="opacity-70">
+              A place where people connect, learn new skills, and grow together — jakace trade
+            </p>
           </div>
 
           {loadingUsers ? (
@@ -107,6 +127,7 @@ const HomePage = () => {
                     className="card bg-base-200 hover:shadow-lg transition-all duration-300"
                   >
                     <div className="card-body p-5 space-y-4">
+
                       <div className="flex items-center gap-3">
                         <div className="avatar size-16 rounded-full">
                           <img src={user.profilePic} alt={user.fullName} />
@@ -123,7 +144,7 @@ const HomePage = () => {
                         </div>
                       </div>
 
-                      {/* Languages with flags */}
+                      {/* Languages */}
                       <div className="flex flex-wrap gap-1.5">
                         <span className="badge badge-secondary">
                           {getLanguageFlag(user.nativeLanguage)}
@@ -137,11 +158,11 @@ const HomePage = () => {
 
                       {user.bio && <p className="text-sm opacity-70">{user.bio}</p>}
 
-                      {/* Action button */}
+                      {/* BUTTON */}
                       <button
                         className={`btn w-full mt-2 ${
                           hasRequestBeenSent ? "btn-disabled" : "btn-primary"
-                        } `}
+                        }`}
                         onClick={() => sendRequestMutation(user._id)}
                         disabled={hasRequestBeenSent || isPending}
                       >
@@ -157,6 +178,7 @@ const HomePage = () => {
                           </>
                         )}
                       </button>
+
                     </div>
                   </div>
                 );
@@ -164,6 +186,7 @@ const HomePage = () => {
             </div>
           )}
         </section>
+
       </div>
     </div>
   );
